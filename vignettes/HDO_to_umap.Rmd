@@ -1,0 +1,32 @@
+---
+title: "HDO_to_umap"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{HDO_to_umap}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(hdos)
+library(ggplot2)
+library(rgl)
+```
+
+```{r plotx}
+points <- bind_objects(list(rectangle_nd(lengths = c(7,0.1,0.1)),
+                            rectangle_nd(lengths = c(8,0.1,0.1),
+                                         rot_mat = get_rotation_matrix(0,pi/4,0)),
+                            rectangle_nd(lengths = c(6,0.1,0.1),
+                                         rot_mat = get_rotation_matrix(0,0,pi/4)),
+                            rectangle_nd(lengths = c(6,2,0.1),
+                                         rot_mat = get_rotation_matrix(pi/4,0,0))))
+rgl3dplot_d(points)
+```
