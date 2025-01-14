@@ -370,9 +370,8 @@ ggumap_d <- function(object, x = "UMAP1", y = "UMAP2", color = "name", ncol_lege
   ggplot(object[["meta"]], aes(!!rlang::sym(x), !!rlang::sym(y), color = !!rlang::sym(color))) +
     geom_point(size = 0.2) +
     theme(legend.position = "bottom", legend.title = element_blank()) +
-    scale_color_manual(values = fcexpr::col_pal("custom")) +
+    scale_color_custom() +
     guides(color = guide_legend(ncol = ncol_legend, override.aes =  c(size = 3)))
-  #scale_color_gradientn(colors = fcexpr::col_pal("RColorBrewer::Spectral", direction = -1))
 }
 
 ggumap_c <- function(object, x = "UMAP1", y = "UMAP2", color = "r", ncol_legend = 2) {
@@ -381,7 +380,49 @@ ggumap_c <- function(object, x = "UMAP1", y = "UMAP2", color = "r", ncol_legend 
 
   ggplot(object[["meta"]], aes(!!rlang::sym(x), !!rlang::sym(y), color = !!rlang::sym(color))) +
     geom_point(size = 0.2) +
-    scale_color_gradientn(colors = fcexpr::col_pal("RColorBrewer::Spectral", direction = -1))
+    scale_color_spectral()
+}
+
+ggbin_c <- function(object, x = "x1", y = "x2", color = "r", facet_var = "x3_bin") {
+
+  if (is.list(object) && identical(names(object), c("coord", "meta"))) {
+    object <- dplyr::bind_cols(object)
+  }
+
+  ggplot(object, aes(!!rlang::sym(x), !!rlang::sym(y), color = !!rlang::sym(color))) +
+    geom_point() +
+    theme_void() +
+    scale_color_spectral() +
+    facet_wrap(vars(!!rlang::sym(facet_var)))
+}
+
+
+scale_color_spectral <- function(colors = fcexpr::col_pal("RColorBrewer::Spectral", direction = -1),
+                                 values = NULL,
+                                 name = waiver(),
+                                 na.value = "grey50",
+                                 guide = "colorbar",
+                                 ...) {
+  if (is.null(values)) {
+    values <- seq(0, 1, length.out = length(colors))
+  }
+  ggplot2::scale_color_gradientn(
+    colours = colors,
+    values = scales::rescale(values),
+    name = name,
+    na.value = na.value,
+    guide = guide,
+    ...
+  )
+}
+
+scale_color_custom <- function(colors = fcexpr::col_pal("custom"), name = waiver(), na.value = "grey50", ...) {
+  ggplpt2::scale_color_manual(
+    values = colors,
+    name = name,
+    na.value = na.value,
+    ...
+  )
 }
 
 
@@ -463,8 +504,8 @@ get_torus_normal_vec_by_pca <- function(coord, rounding = 1) {
 }
 
 rgl3dplot_d <- function(object, color = "name") {
-  rle_col <- rle(object[["meta"]][[color]])
-  col_vec <- rep(fcexpr::col_pal("custom", n = length(rle_col$values)), rle_col$lengths)
+  inds <- as.numeric(factor(object[["meta"]][[color]], levels = unique(object[["meta"]][[color]])))
+  col_vec <- fcexpr::col_pal("custom", n = length(unique(inds)))[inds]
   rgl::open3d()
   rgl::plot3d(object[["coord"]], col = col_vec)
   rgl::rglwidget()

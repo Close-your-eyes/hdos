@@ -14,6 +14,7 @@
 #' @param return_3D_angles
 #' @param return_coords_only
 #' @param rot_mat
+#' @param return_3D_radii
 #'
 #' @return
 #' @export
@@ -31,6 +32,7 @@ torus_3d <- function(n_samples = 1000,
                      inside = T,
                      n_bins = 9,
                      return_3D_angles = T,
+                     return_3D_radii = T,
                      return_coords_only = F,
                      rot_mat = diag(n_dim)) {
 
@@ -117,7 +119,15 @@ torus_3d <- function(n_samples = 1000,
   names(bins) <- paste0(names(bins), "_bin")
 
   # radius
-  radii <- sqrt(rowSums(points^2))
+  #radii <- sqrt(rowSums(points^2))
+
+  radii_3d <- NULL
+  if (return_3D_radii) {
+    radii_3d <- dplyr::bind_cols(get_radii_3d_all(points))
+    if (ncol(radii_3d) == 1) {
+      names(radii_3d) <- strsplit(names(radii_3d), "_")[[1]][1]
+    }
+  }
 
   angle_3d <- NULL
   if (return_3D_angles) {
@@ -139,7 +149,8 @@ torus_3d <- function(n_samples = 1000,
   points <- list(coord = as.data.frame(points),
                  meta = do.call(dplyr::bind_cols, list(as.data.frame(bins),
                                                        angle_3d,
-                                                       data.frame(r = radii, name = name, hash = hashname))))
+                                                       radii_3d,
+                                                       data.frame(name = name, hash = hashname)))) # r = radii
   attributes(points) <- list(
     type = "torus",
     center = origin,

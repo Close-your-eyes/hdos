@@ -84,7 +84,7 @@ sphere_nd <- function(n_samples = 1000,
   } else {
     # Scale to the surface of the sphere
     points <- points * radius
-    radii <- rep(radius, n_samples)
+    #radii <- rep(radius, n_samples)
   }
 
   # scale to ellipsoid
@@ -92,7 +92,7 @@ sphere_nd <- function(n_samples = 1000,
     points <- points %*% diag(ellipsoid_scaling)
     colnames(points) <- dimnames
     # recalc radii, needed after elipsoid scaling
-    radii <- sqrt(rowSums(points^2)) # without elipsoid scaling, this is the same as radii <- generate_radii(n_samples, density_fun)
+    # radii <- sqrt(rowSums(points^2)) # without elipsoid scaling, this is the same as radii <- generate_radii(n_samples, density_fun)
   }
 
   ## correct for minor deviation from origin, center only
@@ -134,7 +134,7 @@ sphere_nd <- function(n_samples = 1000,
   #dens_3d <- get_density_3d_all(points)
   points <- list(coord = as.data.frame(points),
                  meta = do.call(dplyr::bind_cols, list(as.data.frame(bins),
-                                                       r = radii,
+                                                       #r = radii,
                                                        radii_3d,
                                                        angle_3d,
                                                        data.frame(hash = hashname, name = name))))

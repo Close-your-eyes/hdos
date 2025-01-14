@@ -17,12 +17,13 @@ torus_3d(
   inside = T,
   n_bins = 9,
   return_3D_angles = T,
+  return_3D_radii = T,
   return_coords_only = F,
   rot_mat = diag(n_dim)
 )
 }
 \arguments{
-\item{rot_mat}{}
+\item{return_3D_radii}{}
 }
 \description{
 Sample points from a 3-dimensional torus

@@ -1,4 +1,4 @@
-#' Sample points from a n-dimensional rectangle
+#' Sample points from a n-dimensional rectangle prism (cuboid)
 #'
 #' @param n_samples
 #' @param n_dim
@@ -16,24 +16,24 @@
 #' @export
 #'
 #' @examples
-rectangle_nd <- function(n_samples = 1000,
-                         n_dim = 3,
-                         dimnames = paste0("x", 1:n_dim),
-                         lengths = rep(1, n_dim),
-                         n_bins = 9,
-                         origin = rep(0, n_dim),
-                         return_coords_only = F,
-                         return_3D_radii = T,
-                         return_3D_angles = T,
-                         inside = T,
-                         rot_mat = diag(n_dim)) {
+cuboid_nd <- function(n_samples = 1000,
+                      n_dim = 3,
+                      dimnames = paste0("x", 1:n_dim),
+                      lengths = rep(1, n_dim),
+                      n_bins = 9,
+                      origin = rep(0, n_dim),
+                      return_coords_only = F,
+                      return_3D_radii = T,
+                      return_3D_angles = T,
+                      inside = T,
+                      rot_mat = diag(n_dim)) {
 
   # Check if lengths match the dimensions
   if (length(lengths) != n_dim) {
     stop("The 'lengths' vector must have the same length as the 'n_dim' parameter.")
   }
 
-  name <- paste0(n_dim, "Drect_", paste(lengths, collapse = ""), "_", paste(origin, collapse = ""), "_", n_samples)
+  name <- paste0(n_dim, "Dcuboid_", paste(lengths, collapse = ""), "_", paste(origin, collapse = ""), "_", n_samples)
 
   # hashname for coloring of seperate objects later
   hashname <- rlang::hash(list(n_samples,
@@ -110,7 +110,12 @@ rectangle_nd <- function(n_samples = 1000,
   }
 
   points <- list(coord = as.data.frame(points),
-                 meta = do.call(dplyr::bind_cols, list(as.data.frame(bins), radii_3d, angle_3d, data.frame(name = name, hash = hashname))))
+                 meta = do.call(dplyr::bind_cols, list(
+                   as.data.frame(bins),
+                   radii_3d,
+                   angle_3d,
+                   data.frame(name = name, hash = hashname)
+                 )))
 
   return(points)
 }
