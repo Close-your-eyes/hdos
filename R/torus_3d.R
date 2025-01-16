@@ -48,6 +48,10 @@ torus_3d <- function(n_samples = 1000,
       scaling <- scaling[1:n_dim]
     }
   }
+  if (any(scaling <= 0)) {
+    message("scaling must be greater than zero. setting values to one.")
+    scaling[which(scaling <= 0)] <- 1
+  }
   if (length(origin) != n_dim) {
     message("adjusting len of origin.")
     if (length(origin) < n_dim) {
@@ -69,6 +73,7 @@ torus_3d <- function(n_samples = 1000,
                                scaling,
                                origin,
                                inside))
+  hashname <- substr(hashname, 1, 6)
 
 
   # Generate random angles
@@ -110,12 +115,25 @@ torus_3d <- function(n_samples = 1000,
     if (!identical(rot_mat, diag(3))) {
       points <- rotate_space_3D(points, rot_mat)
     }
-    points <- list(coord = as.data.frame(points), meta = data.frame(name = rep(name, nrow(points)), hash = rep(hashname, nrow(points))))
-    attributes(points) <- list(type = "torus", center = origin, radius_major = R, radius_minor = r, names = names(points))
+    normal_vec <- get_torus_normal_vec_by_pca(points)
+
+    points <- list(coord = tibble::as_tibble(points), meta = tibble::tibble(
+      name = rep(name, nrow(points)),
+      hash = rep(hashname, nrow(points))
+    ))
+    attributes(points) <- list(
+      type = "torus",
+      center = origin,
+      radius_major = R,
+      radius_minor = r,
+      normal_vector = normal_vec,
+      names = names(points)
+    )
     return(points)
   }
 
   bins <- apply(points, 2, cut, breaks = n_bins, labels = F, simplify = F)
+  bins <- lapply(bins, function(x) factor(x, levels = sort(unique(x))))
   names(bins) <- paste0(names(bins), "_bin")
 
   # radius
@@ -146,11 +164,11 @@ torus_3d <- function(n_samples = 1000,
 
   normal_vec <- get_torus_normal_vec_by_pca(points)
 
-  points <- list(coord = as.data.frame(points),
-                 meta = do.call(dplyr::bind_cols, list(as.data.frame(bins),
+  points <- list(coord = tibble::as_tibble(points),
+                 meta = do.call(dplyr::bind_cols, list(tibble::as_tibble(bins),
                                                        angle_3d,
                                                        radii_3d,
-                                                       data.frame(name = name, hash = hashname)))) # r = radii
+                                                       tibble::tibble(name = name, hash = hashname)))) # r = radii
   attributes(points) <- list(
     type = "torus",
     center = origin,

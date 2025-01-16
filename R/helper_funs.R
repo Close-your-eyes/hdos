@@ -328,7 +328,9 @@ add_noise_points <- function(data, extend_axes = 1.2, density = 0.1) {
 }
 
 
-bind_objects <- function(object_list, missing_dim_fill = c("0", "runif"), ...) {
+bind_objects <- function(object_list,
+                         missing_dim_fill = c("0", "runif"),
+                         ...) {
 
   missing_dim_fill <- match.arg(missing_dim_fill, c("0", "runif"))
 
@@ -345,7 +347,10 @@ bind_objects <- function(object_list, missing_dim_fill = c("0", "runif"), ...) {
 
 }
 
-add_umap <- function(object, dimnames = c("UMAP1", "UMAP2"), overwrite = T, ...) {
+add_umap <- function(object,
+                     dimnames = c("UMAP1", "UMAP2"),
+                     overwrite = T,
+                     ...) {
   um <- as.data.frame(uwot::umap(as.matrix(object[["coord"]]), scale = T, verbose = T, ...))
 
   if (overwrite) {
@@ -363,37 +368,63 @@ add_umap <- function(object, dimnames = c("UMAP1", "UMAP2"), overwrite = T, ...)
   return(object)
 }
 
-ggumap_d <- function(object, x = "UMAP1", y = "UMAP2", color = "name", ncol_legend = 2) {
+ggumap <- function(object,
+                   x = "UMAP1",
+                   y = "UMAP2",
+                   color = "name",
+                   ncol_legend = 2) {
 
+  # shuffle
   object[["meta"]] <- object[["meta"]][sample(1:nrow(object[["meta"]])),]
 
-  ggplot(object[["meta"]], aes(!!rlang::sym(x), !!rlang::sym(y), color = !!rlang::sym(color))) +
-    geom_point(size = 0.2) +
-    theme(legend.position = "bottom", legend.title = element_blank()) +
-    scale_color_custom() +
-    guides(color = guide_legend(ncol = ncol_legend, override.aes =  c(size = 3)))
+  p <- ggplot(object[["meta"]], aes(!!rlang::sym(x), !!rlang::sym(y), color = !!rlang::sym(color))) +
+    geom_point(size = 0.2)
+
+  if (is.numeric(object[["meta"]])) {
+    p <- p + scale_color_spectral()
+  } else {
+    p <-
+      p +
+      theme(legend.position = "bottom", legend.title = element_blank()) +
+      scale_color_custom() +
+      guides(color = guide_legend(ncol = ncol_legend, override.aes = c(size = 3)))
+  }
+
+  return(p)
 }
 
-ggumap_c <- function(object, x = "UMAP1", y = "UMAP2", color = "r", ncol_legend = 2) {
-
-  object[["meta"]] <- object[["meta"]][sample(1:nrow(object[["meta"]])),]
-
-  ggplot(object[["meta"]], aes(!!rlang::sym(x), !!rlang::sym(y), color = !!rlang::sym(color))) +
-    geom_point(size = 0.2) +
-    scale_color_spectral()
-}
-
-ggbin_c <- function(object, x = "x1", y = "x2", color = "r", facet_var = "x3_bin") {
+ggbin <- function(object,
+                  x = "x1",
+                  y = "x2",
+                  color = "name",
+                  facet_var = "x3_bin",
+                  ncol_legend = 2,
+                  legend.position = "bottom",
+                  theme = theme_void) {
 
   if (is.list(object) && identical(names(object), c("coord", "meta"))) {
     object <- dplyr::bind_cols(object)
   }
 
-  ggplot(object, aes(!!rlang::sym(x), !!rlang::sym(y), color = !!rlang::sym(color))) +
-    geom_point() +
-    theme_void() +
-    scale_color_spectral() +
+  p <- ggplot(object, aes(!!rlang::sym(x), !!rlang::sym(y), color = !!rlang::sym(color))) +
+    geom_point(size = 0.2) +
+    do.call(theme, args = list()) +
+    coord_fixed() +
     facet_wrap(vars(!!rlang::sym(facet_var)))
+
+  if (!is.numeric(object[[color]])) {
+    # discrete
+    p <- p +
+      ggplot2::theme(legend.position = legend.position, legend.title = element_blank(), plot.background = element_rect(colour = "black")) +
+      scale_color_custom() +
+      guides(color = guide_legend(ncol = ncol_legend, override.aes = c(size = 3)))
+  } else {
+    p <- p +
+      scale_color_spectral() +
+      ggplot2::theme(legend.position = legend.position, plot.background = element_rect(colour = "black"))
+  }
+
+  return(p)
 }
 
 
@@ -417,7 +448,7 @@ scale_color_spectral <- function(colors = fcexpr::col_pal("RColorBrewer::Spectra
 }
 
 scale_color_custom <- function(colors = fcexpr::col_pal("custom"), name = waiver(), na.value = "grey50", ...) {
-  ggplpt2::scale_color_manual(
+  ggplot2::scale_color_manual(
     values = colors,
     name = name,
     na.value = na.value,
@@ -490,7 +521,7 @@ get_rotation_matrix <- function(rx, ry, rz) {
                  0, 0, 1),
                nrow = 3, byrow = TRUE)
 
-  # Combine rotations: Rz * Ry * Rx
+  # Combine rotations by matrix multiplication: Rz * Ry * Rx
   R <- Rz %*% Ry %*% Rx
   return(R)
 }
@@ -503,10 +534,39 @@ get_torus_normal_vec_by_pca <- function(coord, rounding = 1) {
   return(abs(round(unit_normal_vector,rounding))) # round since PC is approximation; abs just to make it positive always
 }
 
-rgl3dplot_d <- function(object, color = "name") {
-  inds <- as.numeric(factor(object[["meta"]][[color]], levels = unique(object[["meta"]][[color]])))
-  col_vec <- fcexpr::col_pal("custom", n = length(unique(inds)))[inds]
+rgl3dplot <- function(object, color = "name", showlegend = T) {
+
+  type <- "discrete"
+  if (is.factor(object[["meta"]][[color]])) {
+    inds <- as.numeric(factor(object[["meta"]][[color]]))
+    col_vec <- fcexpr::col_pal("custom", n = length(unique(inds)), direction = 1)[inds]
+  } else if (is.character(object[["meta"]][[color]])) {
+    object[["meta"]][[color]] <- factor(object[["meta"]][[color]], levels = unique(object[["meta"]][[color]])) #sort?
+    inds <- as.numeric(object[["meta"]][[color]])
+    col_vec <- fcexpr::col_pal("custom", n = length(unique(inds)), direction = 1)[inds]
+  } else {
+    type <- "continuous"
+    # Map values to the color palette
+    col_vec <- suppressMessages(fcexpr::col_pal("RColorBrewer::Spectral", n = 100, direction = -1))
+    #normvals <- (object[["meta"]][[color]] - min(object[["meta"]][[color]])) / (max(object[["meta"]][[color]]) - min(object[["meta"]][[color]]))
+    #col_vec <- col_vec[round(normvals * (length(col_vec) - 1)) + 1]
+    normvals <- scales::rescale(object[["meta"]][[color]])
+    col_vec <- col_vec[normvals*99+1]
+  }
+
   rgl::open3d()
-  rgl::plot3d(object[["coord"]], col = col_vec)
+  rgl::plot3d(object[["coord"]], col = col_vec, aspect = F)
+  if (type == "discrete" && showlegend) {
+    # add legend
+    legend_vec <- stats::setNames(unique(col_vec), unique(object[["meta"]][[color]]))[levels(object[["meta"]][[color]])]
+    rgl::legend3d(
+      "topright",
+      legend = names(legend_vec),
+      pch = 16,
+      col = legend_vec,
+      cex = 1,
+      inset = c(0.02)
+    )
+  }
   rgl::rglwidget()
 }

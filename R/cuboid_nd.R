@@ -42,6 +42,7 @@ cuboid_nd <- function(n_samples = 1000,
                                lengths,
                                origin,
                                inside))
+  hashname <- substr(hashname, 1, 6)
 
   # Generate lower and upper bounds for the rectangle in each dimension
   bounds <- matrix(c(rep(0, n_dim), lengths), ncol = 2)
@@ -79,10 +80,22 @@ cuboid_nd <- function(n_samples = 1000,
     if (!identical(rot_mat, diag(3)) && n_dim == 3) {
       points <- rotate_space_3D(points, rot_mat)
     }
-    return(list(coord = as.data.frame(points), meta = data.frame(name = rep(name, nrow(points)), hash = rep(hashname, nrow(points)))))
+
+    points <- list(coord = tibble::as_tibble(points), meta = tibble::tibble(
+      name = rep(name, nrow(points)),
+      hash = rep(hashname, nrow(points))
+    ))
+    attributes(points) <- list(
+      type = "cuboid",
+      center = origin,
+      lengths = lengths,
+      names = names(points)
+    )
+    return(points)
   }
 
   bins <- apply(points, 2, cut, breaks = n_bins, labels = F, simplify = F)
+  bins <- lapply(bins, function(x) factor(x, levels = sort(unique(x))))
   names(bins) <- paste0(names(bins), "_bin")
 
   radii_3d <- NULL
@@ -109,13 +122,20 @@ cuboid_nd <- function(n_samples = 1000,
     points <- rotate_space_3D(points, rot_mat)
   }
 
-  points <- list(coord = as.data.frame(points),
+  points <- list(coord = tibble::as_tibble(points),
                  meta = do.call(dplyr::bind_cols, list(
-                   as.data.frame(bins),
+                   tibble::as_tibble(bins),
                    radii_3d,
                    angle_3d,
-                   data.frame(name = name, hash = hashname)
+                   tibble::tibble(name = name, hash = hashname)
                  )))
+
+  attributes(points) <- list(
+    type = "cuboid",
+    center = origin,
+    lengths = lengths,
+    names = names(points)
+  )
 
   return(points)
 }

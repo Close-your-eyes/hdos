@@ -26,7 +26,7 @@ sphere_nd <- function(n_samples = 1000,
                       origin = rep(0, n_dim),
                       inside = T,
                       n_bins = 9,
-                      return_3D_angles = F,
+                      return_3D_angles = T,
                       return_3D_radii = T,
                       return_coords_only = F) {
 
@@ -37,6 +37,10 @@ sphere_nd <- function(n_samples = 1000,
     } else {
       ellipsoid_scaling <- ellipsoid_scaling[1:n_dim]
     }
+  }
+  if (any(ellipsoid_scaling <= 0)) {
+    message("ellipsoid_scaling must be greater than zero. setting values to one.")
+    ellipsoid_scaling[which(ellipsoid_scaling <= 0)] <- 1
   }
   if (length(origin) != n_dim) {
     message("adjusting len of origin.")
@@ -56,6 +60,7 @@ sphere_nd <- function(n_samples = 1000,
                                ellipsoid_scaling,
                                origin,
                                inside))
+  hashname <- substr(hashname, 1, 6)
 
   if (any(ellipsoid_scaling != 1)) {
     name <- paste0(n_dim, "Dellips_", paste(round(ellipsoid_scaling,1), collapse = ""), "_", paste(round(origin,1), collapse = ""), "_", n_samples)
@@ -102,12 +107,13 @@ sphere_nd <- function(n_samples = 1000,
     if (any(origin != 0)) {
       points <- sweep(points, 2, origin, FUN = "+")
     }
-    points <- list(coord = as.data.frame(points), meta = data.frame(name = rep(name, nrow(points)), hash = rep(hashname, nrow(points))))
+    points <- list(coord = tibble::as_tibble(points), meta = tibble::tibble(name = rep(name, nrow(points)), hash = rep(hashname, nrow(points))))
     attributes(points) <- list(type = "sphere", center = origin, radius = radius, names = names(points))
     return(points)
   }
 
   bins <- apply(points, 2, cut, breaks = n_bins, labels = F, simplify = F)
+  bins <- lapply(bins, function(x) factor(x, levels = sort(unique(x))))
   names(bins) <- paste0(names(bins), "_bin")
 
   radii_3d <- NULL
@@ -132,12 +138,13 @@ sphere_nd <- function(n_samples = 1000,
   }
 
   #dens_3d <- get_density_3d_all(points)
-  points <- list(coord = as.data.frame(points),
-                 meta = do.call(dplyr::bind_cols, list(as.data.frame(bins),
+
+  points <- list(coord = tibble::as_tibble(points),
+                 meta = do.call(dplyr::bind_cols, list(tibble::as_tibble(bins),
                                                        #r = radii,
                                                        radii_3d,
                                                        angle_3d,
-                                                       data.frame(hash = hashname, name = name))))
+                                                       tibble::tibble(hash = hashname, name = name))))
 
   attributes(points) <- list(type = "sphere", center = origin, radius = radius, names = names(points))
   return(points)

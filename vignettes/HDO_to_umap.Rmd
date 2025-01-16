@@ -10,23 +10,111 @@ vignette: >
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  cache = T,
+  cache.lazy = T,
+  fig.width = 8
 )
 ```
+
+Let's sample points from high dimensional geometric objects (HDO) and see what UMAP or tSNE does to them when reducing to two dimensions.
 
 ```{r setup}
 library(hdos)
 library(ggplot2)
 library(rgl)
+library(patchwork)
 ```
 
-```{r plotx}
-points <- bind_objects(list(rectangle_nd(lengths = c(7,0.1,0.1)),
-                            rectangle_nd(lengths = c(8,0.1,0.1),
-                                         rot_mat = get_rotation_matrix(0,pi/4,0)),
-                            rectangle_nd(lengths = c(6,0.1,0.1),
-                                         rot_mat = get_rotation_matrix(0,0,pi/4)),
-                            rectangle_nd(lengths = c(6,2,0.1),
-                                         rot_mat = get_rotation_matrix(pi/4,0,0))))
-rgl3dplot_d(points)
+### Introduction: sampling functions and visualization
+
+```{r plots1}
+### sampling points from inside of a 3D sphere
+s1 <- sphere_nd(n_samples = 2000, density_fun = rdf_uniform)
+s1[["coord"]] # coordinates of sampled points
+s1[["meta"]] # meta features: bins, spherical coordinates and identifiers
+### rgl3dplot is a short-hand to create an interactive 3D plot with discrete color scale
+p1 <- rgl3dplot(object = s1, color = "x3_bin")
+# rgl3dplot_d <- function(object, color = "name") {
+#   inds <- as.numeric(factor(object[["meta"]][[color]], levels = unique(object[["meta"]][[color]])))
+#   col_vec <- fcexpr::col_pal("custom", n = length(unique(inds)))[inds]
+#   rgl::open3d()
+#   rgl::plot3d(object[["coord"]], col = col_vec, aspect = F)
+#   rgl::rglwidget()
+# }
+### ggbin is a short-hand to create 2D plots, faceted by a third variable (e.g. dimension)
+p2 <- ggbin(object = s1, color = "x3_bin", legend.position = "none")
+# ggbin_d <- function(object,
+#                     x = "x1",
+#                     y = "x2",
+#                     color = "name",
+#                     facet_var = "x3_bin",
+#                     ncol_legend = 2,
+#                     legend.position = "bottom") {
+# 
+#   if (is.list(object) && identical(names(object), c("coord", "meta"))) {
+#     object <- dplyr::bind_cols(object)
+#   }
+# 
+#   ggplot(object, aes(!!rlang::sym(x), !!rlang::sym(y), color = !!rlang::sym(color))) +
+#     geom_point(size = 0.2) +
+#     theme_void() +
+#     theme(legend.position = legend.position, legend.title = element_blank()) +
+#     scale_color_custom() +
+#     coord_fixed() +
+#     guides(color = guide_legend(ncol = ncol_legend, override.aes = c(size = 3))) +
+#     facet_wrap(vars(!!rlang::sym(facet_var)))
+# }
+p3 <- ggbin(object = s1, color = "r")
+p4 <- ggbin(object = s1, color = "phi")
+p1
+patchwork::wrap_plots(p2,p3,p4, nrow = 1)
 ```
+
+There are several options to modify sphere_nd.
+
+```{r plots2}
+# points on surface only; radii are very close to 1
+s2 <- sphere_nd(n_samples = 2000, inside = F)
+# radial density function with low probability in center
+s3 <- sphere_nd(n_samples = 3000, density_fun = rdf_low_center)
+# elliptical shape in x2 dimension
+s4 <- sphere_nd(n_samples = 3000, ellipsoid_scaling = c(1,2,1))
+p5 <- ggbin(object = s2, color = "r")
+p6 <- ggbin(object = s3, color = "r")
+p7 <- ggbin(object = s4, color = "r")
+patchwork::wrap_plots(p5,p6,p7, nrow = 1)
+```
+
+Other geometric objects and how to place them in one coordinate system.
+
+```{r plots3, message=FALSE}
+# default torus
+t1 <- torus_3d(n_samples = 2000, R = 3, r = 1)
+# greater major radius (R) and other orientation by swapping dimnames
+t2 <- torus_3d(n_samples = 2000, R = 5, r = 1, dimnames = c("x3","x2","x1"))
+# smaller minor radius (r), shifted center (origin) and 45° rotation in first dimension
+# using a rotation matrix
+t3 <- torus_3d(n_samples = 1000, R = 3, r = 0.5, origin = c(6,0,0),
+               rot_mat = get_rotation_matrix(rx = pi/4, ry = 0, rz = 0))
+# adding oscillation in third dimension
+t4 <- torus_3d(n_samples = 1000, R = 3, r = 0.5, origin = c(0,5,5),
+               amplitude = 0.5, frequency = 2*pi)
+# a flat cuboid on top of all tori
+c1 <- cuboid_nd(lengths = c(15,15,0.2), origin = c(0,0,8))
+# combine all objects in one coordinate system
+t1234c1 <- bind_objects(list(t1, t2, t3, t4, c1))
+# default color is by 'name'; any column in t1234c1[["meta"]] could by used instead
+t1234c1[["meta"]]
+rgl3dplot(t1234c1)
+```
+
+More than 3 dimensions and addition of noise points
+
+```{r}
+
+```
+
+
+
+
