@@ -33,7 +33,7 @@ cuboid_nd <- function(n_samples = 1000,
     stop("The 'lengths' vector must have the same length as the 'n_dim' parameter.")
   }
 
-  name <- paste0(n_dim, "Dcuboid_", paste(lengths, collapse = ""), "_", paste(origin, collapse = ""), "_", n_samples)
+  name <- paste0(n_dim, "Dcuboid_", paste(lengths, collapse = ""), "_", paste(round(origin,1), collapse = ""), "_", n_samples)
 
   # hashname for coloring of seperate objects later
   hashname <- rlang::hash(list(n_samples,
@@ -74,12 +74,13 @@ cuboid_nd <- function(n_samples = 1000,
   points <- scale(points, scale = F) # center around zero
 
   if (return_coords_only) {
-    if (any(origin != 0)) {
-      points <- sweep(points, 2, origin, FUN = "+")
-    }
     if (!identical(rot_mat, diag(3)) && n_dim == 3) {
       points <- rotate_space_3D(points, rot_mat)
     }
+    if (any(origin != 0)) {
+      points <- sweep(points, 2, origin, FUN = "+")
+    }
+
 
     points <- list(coord = tibble::as_tibble(points), meta = tibble::tibble(
       name = rep(name, nrow(points)),
@@ -115,11 +116,11 @@ cuboid_nd <- function(n_samples = 1000,
   }
 
   # do shifting last, it distorts angle and radii calc
-  if (any(origin != 0)) {
-    points <- sweep(points, 2, origin, FUN = "+")
-  }
   if (!identical(rot_mat, diag(3)) && n_dim == 3) {
     points <- rotate_space_3D(points, rot_mat)
+  }
+  if (any(origin != 0)) {
+    points <- sweep(points, 2, origin, FUN = "+")
   }
 
   points <- list(coord = tibble::as_tibble(points),

@@ -243,6 +243,8 @@ get_angle_3d_all <- function(points) {
   combs <- combn(dims, 3, simplify = F)
   names(combs) <- sapply(combs, paste, collapse = "")
   # check if center is 0
+  # Using base R
+  # abs(x - y) < sqrt(.Machine$double.eps)
   if (!any(dplyr::near(colMeans(points), 0))) {
     message("centering before 3d angle calc.")
     points <- scale(points, scale = F)
@@ -466,7 +468,8 @@ is_rotation_matrix <- function(mat) {
   }
 
   # Check if the matrix is orthogonal: mat multiplied by its transpose must give identity matrix
-  orthogonal_check <- identical(t(mat) %*% mat, diag(nrow(mat)))
+  #orthogonal_check <- identical(t(mat) %*% mat, diag(nrow(mat)))
+  orthogonal_check <- all(dplyr::near(t(mat) %*% mat, diag(nrow(mat))))
 
   # Check if the determinant is 1 (no squishing of space)
   determinant_check <- dplyr::near(det(mat), 1)
@@ -521,7 +524,8 @@ get_rotation_matrix <- function(rx, ry, rz) {
                  0, 0, 1),
                nrow = 3, byrow = TRUE)
 
-  # Combine rotations by matrix multiplication: Rz * Ry * Rx
+  ## matmult of rotation matrices in 3D is non-commutative
+  ## so the order of application matters, as the first rotation changes the axis orientations
   R <- Rz %*% Ry %*% Rx
   return(R)
 }

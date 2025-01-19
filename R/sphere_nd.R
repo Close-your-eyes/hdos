@@ -5,7 +5,7 @@
 #' @param dimnames
 #' @param density_fun
 #' @param radius
-#' @param ellipsoid_scaling
+#' @param scaling
 #' @param origin
 #' @param inside
 #' @param n_bins
@@ -22,7 +22,7 @@ sphere_nd <- function(n_samples = 1000,
                       dimnames = paste0("x", 1:n_dim),
                       density_fun = function(r) 3*r^2,
                       radius = 1,
-                      ellipsoid_scaling = rep(1, n_dim),
+                      scaling = rep(1, n_dim),
                       origin = rep(0, n_dim),
                       inside = T,
                       n_bins = 9,
@@ -30,17 +30,17 @@ sphere_nd <- function(n_samples = 1000,
                       return_3D_radii = T,
                       return_coords_only = F) {
 
-  if (length(ellipsoid_scaling) != n_dim) {
-    message("adjusting len of ellipsoid_scaling.")
-    if (length(ellipsoid_scaling) < n_dim) {
-      ellipsoid_scaling <- c(ellipsoid_scaling, rep(1, n_dim-length(ellipsoid_scaling)))
+  if (length(scaling) != n_dim) {
+    message("adjusting len of scaling.")
+    if (length(scaling) < n_dim) {
+      scaling <- c(scaling, rep(1, n_dim-length(scaling)))
     } else {
-      ellipsoid_scaling <- ellipsoid_scaling[1:n_dim]
+      scaling <- scaling[1:n_dim]
     }
   }
-  if (any(ellipsoid_scaling <= 0)) {
-    message("ellipsoid_scaling must be greater than zero. setting values to one.")
-    ellipsoid_scaling[which(ellipsoid_scaling <= 0)] <- 1
+  if (any(scaling <= 0)) {
+    message("scaling must be greater than zero. setting values to one.")
+    scaling[which(scaling <= 0)] <- 1
   }
   if (length(origin) != n_dim) {
     message("adjusting len of origin.")
@@ -57,13 +57,13 @@ sphere_nd <- function(n_samples = 1000,
                                sort(dimnames),
                                density_fun,
                                radius,
-                               ellipsoid_scaling,
+                               scaling,
                                origin,
                                inside))
   hashname <- substr(hashname, 1, 6)
 
-  if (any(ellipsoid_scaling != 1)) {
-    name <- paste0(n_dim, "Dellips_", paste(round(ellipsoid_scaling,1), collapse = ""), "_", paste(round(origin,1), collapse = ""), "_", n_samples)
+  if (any(scaling != 1)) {
+    name <- paste0(n_dim, "Dellips_", paste(round(scaling,1), collapse = ""), "_", paste(round(origin,1), collapse = ""), "_", n_samples)
   } else {
     name <- paste0(n_dim, "Dsphere_r", round(radius,1), "_", paste(round(origin,1), collapse = ""), "_", n_samples)
   }
@@ -93,8 +93,8 @@ sphere_nd <- function(n_samples = 1000,
   }
 
   # scale to ellipsoid
-  if (any(ellipsoid_scaling != 1)) {
-    points <- points %*% diag(ellipsoid_scaling)
+  if (any(scaling != 1)) {
+    points <- points %*% diag(scaling)
     colnames(points) <- dimnames
     # recalc radii, needed after elipsoid scaling
     # radii <- sqrt(rowSums(points^2)) # without elipsoid scaling, this is the same as radii <- generate_radii(n_samples, density_fun)

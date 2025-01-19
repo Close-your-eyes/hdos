@@ -10,7 +10,7 @@ sphere_nd(
   dimnames = paste0("x", 1:n_dim),
   density_fun = function(r) 3 * r^2,
   radius = 1,
-  ellipsoid_scaling = rep(1, n_dim),
+  scaling = rep(1, n_dim),
   origin = rep(0, n_dim),
   inside = T,
   n_bins = 9,

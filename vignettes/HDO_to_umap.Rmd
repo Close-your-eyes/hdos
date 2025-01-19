@@ -78,8 +78,8 @@ There are several options to modify sphere_nd.
 s2 <- sphere_nd(n_samples = 2000, inside = F)
 # radial density function with low probability in center
 s3 <- sphere_nd(n_samples = 3000, density_fun = rdf_low_center)
-# elliptical shape in x2 dimension
-s4 <- sphere_nd(n_samples = 3000, ellipsoid_scaling = c(1,2,1))
+# elliptical shape in second dimension
+s4 <- sphere_nd(n_samples = 3000, scaling = c(1,2,1))
 p5 <- ggbin(object = s2, color = "r")
 p6 <- ggbin(object = s3, color = "r")
 p7 <- ggbin(object = s4, color = "r")
@@ -109,10 +109,14 @@ t1234c1[["meta"]]
 rgl3dplot(t1234c1)
 ```
 
-More than 3 dimensions and addition of noise points
+More than 3 dimensions and addition of noise points.
 
 ```{r}
-
+s5 <- sphere_nd(n_samples = 2000, n_dim = 4, radius = 2)
+s6 <- sphere_nd(n_samples = 2000, n_dim = 5, radius = 2, origin = c(2,2,2,2,2))
+t5 <- torus_3d(n_samples = 2000, R = 6)
+s56t4 <- bind_objects(list(s5, s6, t5), missing_dim_fill = "0")
+rgl3dplot(s56t4)
 ```
 
 

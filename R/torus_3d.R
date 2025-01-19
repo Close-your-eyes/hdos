@@ -61,7 +61,7 @@ torus_3d <- function(n_samples = 1000,
     }
   }
 
-  name <- paste0(n_dim, "Dtorus_r", R, r, "_", paste(scaling, collapse = ""), "_", round(amplitude,1), "_", round(frequency, 1), "_", paste(origin, collapse = ""), "_", n_samples)
+  name <- paste0(n_dim, "Dtorus_r", R, r, "_", paste(scaling, collapse = ""), "_", round(amplitude,1), "_", round(frequency,1), "_", paste(round(origin,1), collapse = ""), "_", n_samples)
 
   # hashname for coloring of separate objects later
   hashname <- rlang::hash(list(n_samples,
@@ -104,17 +104,19 @@ torus_3d <- function(n_samples = 1000,
   }
   colnames(points) <- dimnames
 
-  ## correct for minor deviation from origin, center only
-  #points <- scale(points, scale = F) # d
+
+  # correct for minor deviation from origin, center only
+  points <- scale(points, scale = F)
 
   if (return_coords_only) {
     #radii <- sqrt(rowSums(points^2))
-    if (any(origin != 0)) {
-      points <- sweep(points, 2, origin, FUN = "+")
-    }
     if (!identical(rot_mat, diag(3))) {
       points <- rotate_space_3D(points, rot_mat)
     }
+    if (any(origin != 0)) {
+      points <- sweep(points, 2, origin, FUN = "+")
+    }
+
     normal_vec <- get_torus_normal_vec_by_pca(points)
 
     points <- list(coord = tibble::as_tibble(points), meta = tibble::tibble(
@@ -153,13 +155,13 @@ torus_3d <- function(n_samples = 1000,
     names(angle_3d) <- sapply(strsplit(names(angle_3d), "_"), "[", 1)
   }
 
-  # do shifting last, it distorts angle and radii calc
-  if (any(origin != 0)) {
-    points <- sweep(points, 2, origin, FUN = "+")
-  }
-
   if (!identical(rot_mat, diag(3))) {
     points <- rotate_space_3D(points, rot_mat)
+  }
+
+  # do shifting last, it distorts angle and radii and rotation calc
+  if (any(origin != 0)) {
+    points <- sweep(points, 2, origin, FUN = "+")
   }
 
   normal_vec <- get_torus_normal_vec_by_pca(points)
