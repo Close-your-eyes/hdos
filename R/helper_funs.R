@@ -175,7 +175,25 @@ calculate_3d_angles <- function(x, y, z, r) {
   return(data.frame(phi, theta))
 }
 
-plotly3dplot <- function(data, x, y, z, color, showlegend = T) {
+#' Title
+#'
+#' @param data
+#' @param x
+#' @param y
+#' @param z
+#' @param color
+#' @param showlegend
+#'
+#' @return
+#' @export
+#'
+#' @examples
+plotly3dplot <- function(data,
+                         x,
+                         y,
+                         z,
+                         color,
+                         showlegend = T) {
 
   if (is.numeric(data[["meta"]][[color]])) {
     color_mode <- "c"
@@ -288,7 +306,19 @@ get_density_2d_all <- function(points) {
   })
 }
 
-add_noise_points <- function(data, extend_axes = 1.2, density = 0.1) {
+#' Title
+#'
+#' @param data
+#' @param extend_axes
+#' @param density
+#'
+#' @return
+#' @export
+#'
+#' @examples
+add_noise_points <- function(data,
+                             extend_axes = 1.2,
+                             density = 0.1) {
   if (is.list(data) && identical(names(data), c("coord", "meta"))) {
     points <- data[["coord"]]
   } else {
@@ -330,6 +360,16 @@ add_noise_points <- function(data, extend_axes = 1.2, density = 0.1) {
 }
 
 
+#' Title
+#'
+#' @param object_list
+#' @param missing_dim_fill
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 bind_objects <- function(object_list,
                          missing_dim_fill = c("0", "runif"),
                          ...) {
@@ -342,13 +382,26 @@ bind_objects <- function(object_list,
   if (missing_dim_fill == "0") {
     out[["coord"]][is.na(out[["coord"]])] <- 0
   } else {
-    out[["coord"]][is.na(out[["coord"]])] <- runif(n = sum(is.na(out[["coord"]])), ...)
+    for (i in 1:ncol(out[["coord"]])) {
+      out[["coord"]][[i]][is.na(out[["coord"]][[i]])] <- runif(n = sum(is.na(out[["coord"]][[i]])))
+    }
   }
 
   return(out)
 
 }
 
+#' Title
+#'
+#' @param object
+#' @param dimnames
+#' @param overwrite
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
 add_umap <- function(object,
                      dimnames = c("UMAP1", "UMAP2"),
                      overwrite = T,
@@ -370,6 +423,18 @@ add_umap <- function(object,
   return(object)
 }
 
+#' Title
+#'
+#' @param object
+#' @param x
+#' @param y
+#' @param color
+#' @param ncol_legend
+#'
+#' @return
+#' @export
+#'
+#' @examples
 ggumap <- function(object,
                    x = "UMAP1",
                    y = "UMAP2",
@@ -395,6 +460,21 @@ ggumap <- function(object,
   return(p)
 }
 
+#' Title
+#'
+#' @param object
+#' @param x
+#' @param y
+#' @param color
+#' @param facet_var
+#' @param ncol_legend
+#' @param legend.position
+#' @param theme
+#'
+#' @return
+#' @export
+#'
+#' @examples
 ggbin <- function(object,
                   x = "x1",
                   y = "x2",
@@ -503,6 +583,16 @@ rotate_space_3D <- function(coord, rot_mat, long_format = T) {
   }
 }
 
+#' Title
+#'
+#' @param rx
+#' @param ry
+#' @param rz
+#'
+#' @return
+#' @export
+#'
+#' @examples
 get_rotation_matrix <- function(rx, ry, rz) {
   #rz, ry, rz are rotations around respective axis in radians
 
@@ -538,7 +628,22 @@ get_torus_normal_vec_by_pca <- function(coord, rounding = 1) {
   return(abs(round(unit_normal_vector,rounding))) # round since PC is approximation; abs just to make it positive always
 }
 
-rgl3dplot <- function(object, color = "name", showlegend = T) {
+#' Title
+#'
+#' @param object
+#' @param color
+#' @param showlegend
+#'
+#' @return
+#' @export
+#'
+#' @examples
+rgl3dplot <- function(object,
+                      x = "x1",
+                      y = "x2",
+                      z = "x3",
+                      color = "name",
+                      showlegend = T) {
 
   type <- "discrete"
   if (is.factor(object[["meta"]][[color]])) {
@@ -559,7 +664,14 @@ rgl3dplot <- function(object, color = "name", showlegend = T) {
   }
 
   rgl::open3d()
-  rgl::plot3d(object[["coord"]], col = col_vec, aspect = F)
+  rgl::plot3d(x = object[["coord"]][[x]],
+              y = object[["coord"]][[y]],
+              z = object[["coord"]][[z]],
+              xlab = x,
+              ylab = y,
+              zlab = z,
+              col = col_vec,
+              aspect = F)
   if (type == "discrete" && showlegend) {
     # add legend
     legend_vec <- stats::setNames(unique(col_vec), unique(object[["meta"]][[color]]))[levels(object[["meta"]][[color]])]
