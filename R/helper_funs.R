@@ -195,6 +195,10 @@ plotly3dplot <- function(data,
                          color,
                          showlegend = T) {
 
+  ## allow no color
+  ## allow surface:
+  # plotly::plot_ly(grid, x = grid[["x1"]], y = grid[["x2"]], z = grid[["pred"]], color = grid[["model"]], type = "mesh3d")
+
   if (is.numeric(data[["meta"]][[color]])) {
     color_mode <- "c"
   } else {
@@ -325,7 +329,7 @@ add_noise_points <- function(data,
     points <- data
   }
 
-  library(mclust)
+  library(mclust, quietly = T) # needed unfortunately
   clustdensl <- lapply(points, function(x) {
     # estimate densities of existing communities
     res <- mclust::Mclust(x[which(x != 0)]) # exclusion of points at exactly 0 wont change much but removes points who miss this dimension
@@ -529,8 +533,36 @@ scale_color_spectral <- function(colors = fcexpr::col_pal("RColorBrewer::Spectra
   )
 }
 
+scale_fill_spectral <- function(colors = fcexpr::col_pal("RColorBrewer::Spectral", direction = -1),
+                                values = NULL,
+                                name = waiver(),
+                                na.value = "grey50",
+                                guide = "colorbar",
+                                ...) {
+  if (is.null(values)) {
+    values <- seq(0, 1, length.out = length(colors))
+  }
+  ggplot2::scale_fill_gradientn(
+    colours = colors,
+    values = scales::rescale(values),
+    name = name,
+    na.value = na.value,
+    guide = guide,
+    ...
+  )
+}
+
 scale_color_custom <- function(colors = fcexpr::col_pal("custom"), name = waiver(), na.value = "grey50", ...) {
   ggplot2::scale_color_manual(
+    values = colors,
+    name = name,
+    na.value = na.value,
+    ...
+  )
+}
+
+scale_fill_custom <- function(colors = fcexpr::col_pal("custom"), name = waiver(), na.value = "grey50", ...) {
+  ggplot2::scale_fill_manual(
     values = colors,
     name = name,
     na.value = na.value,

@@ -4,7 +4,7 @@
 \alias{rgl3dplot}
 \title{Title}
 \usage{
-rgl3dplot(object, color = "name", showlegend = T)
+rgl3dplot(object, x = "x1", y = "x2", z = "x3", color = "name", showlegend = T)
 }
 \arguments{
 \item{showlegend}{}
