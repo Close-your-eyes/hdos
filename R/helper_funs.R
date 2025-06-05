@@ -1,3 +1,56 @@
+
+random_sphere <- function(n_samples = 2000,
+                          n_dim = 3,
+                          inside = T,
+                          max_dim = 6) {
+  dimname1 <- sample(1:max_dim,1)
+  hdos::sphere_nd(
+    n_samples = n_samples,
+    n_dim = n_dim,
+    dimnames = paste0("x", dimname1:(dimname1+n_dim-1)),
+    scaling = sample(seq(1,4,0.2), n_dim),
+    radius = sample(2:5,1),
+    inside = inside,
+    origin = sample(seq(-20,20,0.5), n_dim),
+    return_coords_only = T
+  )
+}
+random_torus <- function(n_samples = 2000,
+                         n_dim = 3,
+                         inside = T,
+                         max_dim = 6) {
+  dimname1 <- sample(1:max_dim,1)
+  hdos::torus_3d(n_samples = n_samples,
+                 R = sample(3:8,1),
+                 r = sample(seq(0.5,2,0.5),1),
+                 dimnames = paste0("x", dimname1:(dimname1+n_dim-1)),
+                 scaling = sample(seq(1,4,0.2), n_dim),
+                 inside = inside,
+                 origin = sample(seq(-20,20,0.5), n_dim),
+                 return_coords_only = T,
+                 rot_mat = hdos::get_rotation_matrix(sample(seq(-3,3,0.2),1), sample(seq(-3,3,0.2),1), sample(seq(-3,3,0.2),1))
+  )
+}
+
+random_cuboid <- function(n_samples = 2000,
+                          n_dim = 3,
+                          inside = T,
+                          max_dim = 6) {
+  dimname1 <- sample(1:max_dim,1)
+  hdos::cuboid_nd(
+    n_samples = n_samples,
+    n_dim = n_dim,
+    dimnames = paste0("x", dimname1:(dimname1+n_dim-1)),
+    lengths = sample(seq(2,10,0.2), n_dim),
+    inside = inside,
+    origin = sample(seq(-20,20,0.5), n_dim),
+    return_coords_only = T,
+    rot_mat = hdos::get_rotation_matrix(sample(seq(-3,3,0.2),1), sample(seq(-3,3,0.2),1), sample(seq(-3,3,0.2),1))
+  )
+}
+
+
+
 get_density_2d <- function(x, y, ...) {
   if (missing(y) && (is.matrix(x) || is.data.frame(x))) {
     y <- x[,2]
@@ -173,91 +226,6 @@ calculate_3d_angles <- function(x, y, z, r) {
 
   # Return the results as a list
   return(data.frame(phi, theta))
-}
-
-#' Title
-#'
-#' @param data
-#' @param x
-#' @param y
-#' @param z
-#' @param color
-#' @param showlegend
-#'
-#' @return
-#' @export
-#'
-#' @examples
-plotly3dplot <- function(data,
-                         x,
-                         y,
-                         z,
-                         color,
-                         showlegend = T) {
-
-  ## allow no color
-  ## allow surface:
-  # plotly::plot_ly(grid, x = grid[["x1"]], y = grid[["x2"]], z = grid[["pred"]], color = grid[["model"]], type = "mesh3d")
-
-  if (is.numeric(data[["meta"]][[color]])) {
-    color_mode <- "c"
-  } else {
-    color_mode <- "d"
-  }
-  color_mode <- match.arg(color_mode, c("continuous", "discrete"))
-
-  if (is.list(data) && identical(names(data), c("coord", "meta"))) {
-    data <- dplyr::bind_cols(data)
-  }
-
-  if (missing(x)) {
-    x <- names(data)[1]
-  }
-  if (missing(y)) {
-    y <- names(data)[2]
-  }
-  if (missing(z)) {
-    z <- names(data)[3]
-  }
-
-  if (missing(color)) {
-    plotly::plot_ly(data,
-                    x = data[[x]], y = data[[y]], z = data[[z]],
-                    type = "scatter3d", mode = "markers",
-                    size = 2)
-  } else if (color_mode == "discrete") {
-    plotly::plot_ly(data,
-                    x = data[[x]], y = data[[y]], z = data[[z]],
-                    type = "scatter3d", mode = "markers",
-                    size = 2,
-                    # reverse to match ggplot
-                    colors = rev(as.character(fcexpr::col_pal("custom", n = length(unique(data[[color]])), direction = -1))),
-                    color = data[[color]],
-                    showlegend = showlegend)
-  } else if (color_mode == "continuous") {
-    plotly::plot_ly(data,
-                    x = data[[x]], y = data[[y]], z = data[[z]],
-                    type = "scatter3d", mode = "markers",
-                    marker = plotly_marker(data = data,
-                                           color = color,
-                                           size = 2,
-                                           colorscale = plotly_colorscale(fcexpr::col_pal("RColorBrewer::Spectral", direction = -1)),
-                                           showscale = showlegend))
-  }
-}
-
-plotly_colorscale <- function(colors) {
-  n <- length(colors)
-  stops <- seq(0, 1, length.out = n) # Evenly spaced values from 0 to 1
-  lapply(seq_along(colors), function(i) list(stops[i], colors[i]))
-}
-
-plotly_marker <- function(data, color, ...) {
-  list(color = data[[color]],
-       cmin = min(data[[color]]),
-       cmax = max(data[[color]]),
-       ...)
-
 }
 
 get_angle_3d_all <- function(points) {
@@ -658,63 +626,4 @@ get_torus_normal_vec_by_pca <- function(coord, rounding = 1) {
   normal_vector <- torus_pca$rotation[, 3] # third column: last PC --> lowest variance
   unit_normal_vector <- normal_vector / sqrt(sum(normal_vector^2))
   return(abs(round(unit_normal_vector,rounding))) # round since PC is approximation; abs just to make it positive always
-}
-
-#' Title
-#'
-#' @param object
-#' @param color
-#' @param showlegend
-#'
-#' @return
-#' @export
-#'
-#' @examples
-rgl3dplot <- function(object,
-                      x = "x1",
-                      y = "x2",
-                      z = "x3",
-                      color = "name",
-                      showlegend = T) {
-
-  type <- "discrete"
-  if (is.factor(object[["meta"]][[color]])) {
-    inds <- as.numeric(factor(object[["meta"]][[color]]))
-    col_vec <- fcexpr::col_pal("custom", n = length(unique(inds)), direction = 1)[inds]
-  } else if (is.character(object[["meta"]][[color]])) {
-    object[["meta"]][[color]] <- factor(object[["meta"]][[color]], levels = unique(object[["meta"]][[color]])) #sort?
-    inds <- as.numeric(object[["meta"]][[color]])
-    col_vec <- fcexpr::col_pal("custom", n = length(unique(inds)), direction = 1)[inds]
-  } else {
-    type <- "continuous"
-    # Map values to the color palette
-    col_vec <- suppressMessages(fcexpr::col_pal("RColorBrewer::Spectral", n = 100, direction = -1))
-    #normvals <- (object[["meta"]][[color]] - min(object[["meta"]][[color]])) / (max(object[["meta"]][[color]]) - min(object[["meta"]][[color]]))
-    #col_vec <- col_vec[round(normvals * (length(col_vec) - 1)) + 1]
-    normvals <- scales::rescale(object[["meta"]][[color]])
-    col_vec <- col_vec[normvals*99+1]
-  }
-
-  rgl::open3d()
-  rgl::plot3d(x = object[["coord"]][[x]],
-              y = object[["coord"]][[y]],
-              z = object[["coord"]][[z]],
-              xlab = x,
-              ylab = y,
-              zlab = z,
-              col = col_vec,
-              aspect = F)
-  if (type == "discrete" && showlegend) {
-    # add legend
-    legend_vec <- stats::setNames(unique(col_vec), unique(object[["meta"]][[color]]))[levels(object[["meta"]][[color]])]
-    rgl::legend3d(
-      "topright",
-      legend = names(legend_vec),
-      pch = 16,
-      col = legend_vec,
-      cex = 1,
-      inset = c(0.02)
-    )
-  }
-  rgl::rglwidget()
 }
